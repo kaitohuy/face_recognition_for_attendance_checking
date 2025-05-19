@@ -17,8 +17,7 @@ except cv2.error:
  print("Error: Cannot load trainingdata.yml. Please run trainer.py first.")
  exit()
 
-# Lưu thông báo điểm danh tạm thời
-recent_attendances = {}  # {id: {"name": name, "msv": msv, "timestamp": time}}
+recent_attendances = {}
 
 cam = cv2.VideoCapture(0)
 if not cam.isOpened():
@@ -44,7 +43,7 @@ def update_attendance(id, is_manual=False):
         cursor = conn.execute("SELECT Attendance, Name, Msv FROM STUDENTS WHERE ID = ?", (id,))
         result = cursor.fetchone()
         current_attendance, name, msv = result[0], result[1], result[2]
-        if current_attendance == 0:  # Chỉ cập nhật nếu chưa điểm danh
+        if current_attendance == 0:
             # Lưu Timestamp theo UTC+7
             vn_time = datetime.utcnow() + timedelta(hours=7)
             timestamp = vn_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -52,7 +51,7 @@ def update_attendance(id, is_manual=False):
             conn.execute("INSERT INTO AttendanceHistory (StudentID, Name, Msv, Timestamp) VALUES (?, ?, ?, ?)",
                         (id, name, msv, timestamp))
             conn.commit()
-            # Thêm vào recent_attendances để hiển thị thông báo
+
             recent_attendances[id] = {
                 "name": name,
                 "msv": msv,
@@ -83,7 +82,7 @@ def gen_frames():
                  profile = getprofile(id)
                  if profile:
                      profile = getprofile(id)
-                     if profile and id not in recent_attendances:  # Chỉ thêm nếu chưa có trong recent_attendances
+                     if profile and id not in recent_attendances:
                          if update_attendance(id):
                              recent_attendances[id] = {
                                  "name": profile[1],
@@ -142,7 +141,7 @@ def attendance_stats():
 
 @app.route('/attendance_history')
 def attendance_history():
-    date_filter = request.args.get('date', '')  # Lọc theo ngày (YYYY-MM-DD)
+    date_filter = request.args.get('date', '')
     try:
         conn = sqlite3.connect("sqlite.db")
         if date_filter:
@@ -164,7 +163,7 @@ def attendance_history():
 
 @app.route('/attendance_notification')
 def attendance_notification():
-    # Xóa thông báo cũ (hơn 5 giây)
+
     current_time = time.time()
     for id in list(recent_attendances.keys()):
         if current_time - recent_attendances[id]["timestamp"] > 2:
@@ -200,7 +199,6 @@ def manual_attendance():
     try:
         conn = sqlite3.connect("sqlite.db")
         if checked:
-            # Điểm danh thủ công
             success = update_attendance(student_id, is_manual=True)
             if success:
                 conn.close()
@@ -209,11 +207,9 @@ def manual_attendance():
                 conn.close()
                 return jsonify({"error": "Student already marked present or not found"}), 400
         else:
-            # Bỏ điểm danh (chỉ cập nhật Attendance, không xóa AttendanceHistory)
             conn.execute("UPDATE STUDENTS SET Attendance = 0 WHERE ID = ?", (student_id,))
             conn.commit()
             conn.close()
-            # Xóa khỏi recent_attendances nếu có
             if student_id in recent_attendances:
                 del recent_attendances[student_id]
             return jsonify({"message": "Manual attendance cleared successfully"})

@@ -36,10 +36,10 @@ while True:
     faces = facedetect.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     for (x, y, w, h) in faces:
         face = gray[y:y+h, x:x+w]
-        face = cv2.equalizeHist(face)  # Cân bằng histogram cho vùng khuôn mặt
+        face = cv2.equalizeHist(face)
         id, conf = recognizer.predict(face)
         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        if conf < 80:  # Ngưỡng độ tin cậy
+        if conf < 70:
             profile = getprofile(id)
             if profile:
                 cv2.putText(img, f"Name: {profile[0]}", (x-w//2 + 40, y + h + 25), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 127), 2)
