@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Attendance System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold mb-4 text-center">Student Attendance System</h1>
+        <div class="flex flex-col md:flex-row gap-4">
+            <div class="w-full md:w-1/2">
+                <h2 class="text-xl font-semibold mb-2">Live Video Feed</h2>
+                <img src="/video_feed" class="w-full rounded shadow" alt="Video Feed">
+            </div>
+            <div class="w-full md:w-1/2">
+                <div class="tabs">
+                    <button class="tab-btn active bg-blue-500 text-white px-4 py-2 rounded" data-tab="students">Students</button>
+                    <button class="tab-btn bg-gray-300 text-gray-700 px-4 py-2 rounded" data-tab="history">Attendance History</button>
+                </div>
+                <div id="students-tab" class="tab-content">
+                    <h2 class="text-xl font-semibold mb-2">Student List</h2>
+                    <div class="flex items-center gap-4 mb-4">
+                        <button id="resetBtn" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Reset Attendance</button>
+                        <button id="resetHistoryBtn" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">Reset History</button>
+                        <select id="filterSelect" class="border border-gray-300 rounded px-2 py-1">
+                            <option value="all">Tất cả</option>
+                            <option value="present">Đã điểm danh</option>
+                            <option value="absent">Chưa điểm danh</option>
+                        </select>
+                    </div>
+                    <p id="stats" class="mb-4 text-gray-700">Đã điểm danh: 0 | Chưa điểm danh: 0 | Tổng: 0</p>
+                    <table class="w-full border-collapse border border-gray-300">
+                        <thead>
+                            <tr class="bg-gray-200">
+                                <th class="border border-gray-300 p-2">ID</th>
+                                <th class="border border-gray-300 p-2">Name</th>
+                                <th class="border border-gray-300 p-2">MSV</th>
+                                <th class="border border-gray-300 p-2">Class</th>
+                                <th class="border border-gray-300 p-2">Age</th>
+                                <th class="border border-gray-300 p-2">Attendance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentTable"></tbody>
+                    </table>
+                </div>
+                <div id="history-tab" class="tab-content hidden">
+                    <h2 class="text-xl font-semibold mb-2">Attendance History</h2>
+                    <div class="flex items-center gap-4 mb-4">
+                        <input type="date" id="dateFilter" class="border border-gray-300 rounded px-2 py-1">
+                        <button id="filterHistoryBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Filter</button>
+                    </div>
+                    <table class="w-full border-collapse border border-gray-300">
+                        <thead>
+                            <tr class="bg-gray-200">
+                                <th class="border border-gray-300 p-2">ID</th>
+                                <th class="border border-gray-300 p-2">Student ID</th>
+                                <th class="border border-gray-300 p-2">Name</th>
+                                <th class="border border-gray-300 p-2">MSV</th>
+                                <th class="border border-gray-300 p-2">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const displayedNotifications = new Set();
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+        }
+
+        async function fetchStudents(filter = 'all') {
+            try {
+                const response = await fetch(`/students?filter=${filter}`);
+                const students = await response.json();
+                if (response.ok) {
+                    const tableBody = document.getElementById('studentTable');
+                    tableBody.innerHTML = '';
+                    students.forEach(student => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="border border-gray-300 p-2">${student.id}</td>
+                            <td class="border border-gray-300 p-2">${student.name}</td>
+                            <td class="border border-gray-300 p-2">${student.msv}</td>
+                            <td class="border border-gray-300 p-2">${student.lop}</td>
+                            <td class="border border-gray-300 p-2">${student.age}</td>
+                            <td class="border border-gray-300 p-2 flex items-center gap-2 justify-center">
+                                <input type="checkbox" class="attendance-checkbox" data-id="${student.id}" data-msv="${student.msv}" data-name="${student.name}" ${student.attendance ? 'checked' : ''}>
+                                <span class="${student.attendance ? 'text-green-600' : 'text-red-600'}">
+                                    ${student.attendance ? 'Đã điểm danh' : 'Chưa điểm danh'}
+                                </span>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                    // Gắn sự kiện cho checkbox
+                    document.querySelectorAll('.attendance-checkbox').forEach(checkbox => {
+                        checkbox.addEventListener('change', async (e) => {
+                            const studentId = e.target.dataset.id;
+                            const msv = e.target.dataset.msv;
+                            const name = e.target.dataset.name;
+                            const checked = e.target.checked;
+                            try {
+                                const response = await fetch('/manual_attendance', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ student_id: studentId, checked })
+                                });
+                                const result = await response.json();
+                                if (response.ok) {
+                                    if (checked) {
+                                        Swal.fire({
+                                            title: 'Điểm danh thủ công thành công!',
+                                            text: `Sinh viên: ${name} (MSV: ${msv})`,
+                                            icon: 'success',
+                                            timer: 3000,
+                                            timerProgressBar: true,
+                                            showConfirmButton: false
+                                        });
+                                        displayedNotifications.add(msv);
+                                    }
+                                    fetchStudents(document.getElementById('filterSelect').value);
+                                    fetchStats();
+                                } else {
+                                    console.error('Error updating manual attendance:', result.error);
+                                    Swal.fire('Lỗi!', result.error, 'error');
+                                    e.target.checked = !checked; // Hoàn tác nếu lỗi
+                                }
+                            } catch (error) {
+                                console.error('Fetch error:', error);
+                                Swal.fire('Lỗi!', 'Không thể cập nhật điểm danh', 'error');
+                                e.target.checked = !checked; // Hoàn tác nếu lỗi
+                            }
+                        });
+                    });
+                } else {
+                    console.error('Error fetching students:', students.error);
+                }
+            } catch (e) {
+                console.error('Fetch error:', e);
+            }
+        }
+
+        async function fetchStats() {
+            try {
+                const response = await fetch('/attendance_stats');
+                const stats = await response.json();
+                if (response.ok) {
+                    document.getElementById('stats').textContent =
+                        `Đã điểm danh: ${stats.present} | Chưa điểm danh: ${stats.absent} | Tổng: ${stats.total}`;
+                } else {
+                    console.error('Error fetching stats:', stats.error);
+                }
+            } catch (e) {
+                console.error('Fetch stats error:', e);
+            }
+        }
+
+        async function fetchHistory(date = '') {
+            try {
+                const url = date ? `/attendance_history?date=${date}` : '/attendance_history';
+                const response = await fetch(url);
+                const history = await response.json();
+                if (response.ok) {
+                    const tableBody = document.getElementById('historyTable');
+                    tableBody.innerHTML = '';
+                    history.forEach(record => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="border border-gray-300 p-2">${record.id}</td>
+                            <td class="border border-gray-300 p-2">${record.student_id}</td>
+                            <td class="border border-gray-300 p-2">${record.name}</td>
+                            <td class="border border-gray-300 p-2">${record.msv}</td>
+                            <td class="border border-gray-300 p-2">${formatTimestamp(record.timestamp)}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    console.error('Error fetching history:', history.error);
+                }
+            } catch (e) {
+                console.error('Fetch history error:', e);
+            }
+        }
+
+        async function fetchNotifications() {
+            try {
+                const response = await fetch('/attendance_notification');
+                const notifications = await response.json();
+                notifications.forEach(notification => {
+                    if (!displayedNotifications.has(notification.msv)) {
+                        Swal.fire({
+                            title: notification.manual ? 'Điểm danh thủ công thành công!' : 'Điểm danh thành công!',
+                            text: `Sinh viên: ${notification.name} (MSV: ${notification.msv})`,
+                            icon: 'success',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        });
+                        displayedNotifications.add(notification.msv);
+                    }
+                });
+            } catch (e) {
+                console.error('Fetch notification error:', e);
+            }
+        }
+
+        document.getElementById('resetBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/reset_attendance', { method: 'POST' });
+                const result = await response.json();
+                if (response.ok) {
+                    displayedNotifications.clear();
+                    fetchStudents(document.getElementById('filterSelect').value);
+                    fetchStats();
+                } else {
+                    console.error('Error resetting attendance:', result.error);
+                }
+            } catch (e) {
+                console.error('Reset error:', e);
+            }
+        });
+
+        document.getElementById('resetHistoryBtn').addEventListener('click', () => {
+            Swal.fire({
+                title: 'Xác nhận xóa lịch sử điểm danh?',
+                text: 'Hành động này không thể hoàn tác!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Xóa',
+                cancelButtonText: 'Hủy'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const response = await fetch('/reset_attendance_history', { method: 'POST' });
+                        const result = await response.json();
+                        if (response.ok) {
+                            Swal.fire('Đã xóa!', 'Lịch sử điểm danh đã được xóa.', 'success');
+                            fetchHistory();
+                        } else {
+                            console.error('Error resetting history:', result.error);
+                        }
+                    } catch (e) {
+                        console.error('Reset history error:', e);
+                    }
+                }
+            });
+        });
+
+        document.getElementById('filterSelect').addEventListener('change', (e) => {
+            fetchStudents(e.target.value);
+        });
+
+        document.getElementById('filterHistoryBtn').addEventListener('click', () => {
+            const date = document.getElementById('dateFilter').value;
+            fetchHistory(date);
+        });
+
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active', 'bg-blue-500', 'text-white'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+                button.classList.add('active', 'bg-blue-500', 'text-white');
+                document.getElementById(`${button.dataset.tab}-tab`).classList.remove('hidden');
+                if (button.dataset.tab === 'history') {
+                    fetchHistory();
+                }
+            });
+        });
+
+        fetchStudents();
+        fetchStats();
+        setInterval(() => {
+            fetchStudents(document.getElementById('filterSelect').value);
+            fetchStats();
+        }, 1000);
+        fetchNotifications();
+        setInterval(fetchNotifications, 2000);
+        fetchHistory();
+    </script>
+</body>
+</html>
