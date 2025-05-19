@@ -1,20 +1,5 @@
 Hệ thống Điểm danh bằng Nhận diện Khuôn mặt
 Hệ thống điểm danh tự động sử dụng nhận diện khuôn mặt, phát triển cho PTIT. Dùng OpenCV, Flask, SQLite, và Tailwind CSS để nhận diện khuôn mặt qua webcam, quản lý điểm danh, và hiển thị giao diện web.
-Cấu trúc Dự án
-face_recognition_for_attendance_checking/
-├── dataset/                    # Ảnh khuôn mặt
-├── recognizer/                 # Mô hình LBPH
-│   └── trainingdata.yml
-├── templates/                  # File HTML
-│   └── index.html
-├── static/                     # File tĩnh (CSS)
-├── haarcascade_frontalface_default.xml
-├── sqlite.db                   # Cơ sở dữ liệu
-├── dataset_creater.py          # Thu thập dữ liệu
-├── trainer.py                  # Huấn luyện mô hình
-├── detect.py                   # Kiểm tra nhận diện
-├── app.py                      # Ứng dụng chính
-└── README.md
 
 Tải Dự án:
 git clone https://github.com/kaitohuy/face_recognition_for_attendance_checking.git
