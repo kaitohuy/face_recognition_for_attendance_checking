@@ -1,8 +1,6 @@
 Được chứ! Đây là bản đầy đủ đã gộp lại — bạn chỉ cần **copy toàn bộ và dán vào file `README.md`** là xong:
 
----
 
-````markdown
 # 🎓 Hệ thống Điểm danh bằng Nhận diện Khuôn mặt
 
 Hệ thống điểm danh tự động sử dụng nhận diện khuôn mặt, phát triển cho **PTIT**. Ứng dụng sử dụng **OpenCV**, **Flask**, **SQLite**, và **Tailwind CSS** để:
@@ -17,9 +15,7 @@ Hệ thống điểm danh tự động sử dụng nhận diện khuôn mặt, p
 ```bash
 git clone https://github.com/kaitohuy/face_recognition_for_attendance_checking.git
 cd face_recognition_for_attendance_checking
-````
 
----
 
 ## 🧪 Cài Đặt Thư Viện
 
