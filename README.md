@@ -35,3 +35,6 @@ Mạng: http://192.168.66.234:5000 (cùng Wi-Fi).
 Sử dụng:
 Xem video feed nhận diện khuôn mặt.
 Quản lý danh sách sinh viên, điểm danh thủ công, xem lịch sử.
+
+📹 [Xem video demo tại đây](https://drive.google.com/file/d/12oychTGTyRgtqm_l_4TSEGhZWIx9YKFJ/view?usp=sharing)
+
