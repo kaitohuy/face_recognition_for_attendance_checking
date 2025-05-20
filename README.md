@@ -9,13 +9,12 @@ Hệ thống điểm danh tự động sử dụng nhận diện khuôn mặt, p
 - Quản lý điểm danh sinh viên
 - Hiển thị giao diện web thân thiện
 
----
 
 ## 🚀 Tải Dự án
 ```bash
 git clone https://github.com/kaitohuy/face_recognition_for_attendance_checking.git
 cd face_recognition_for_attendance_checking
-
+```
 
 ## 🧪 Cài Đặt Thư Viện
 
@@ -23,7 +22,6 @@ cd face_recognition_for_attendance_checking
 pip install opencv-python opencv-contrib-python numpy flask flask-cors
 ```
 
----
 
 ## 📸 Chuẩn Bị Dữ Liệu
 
